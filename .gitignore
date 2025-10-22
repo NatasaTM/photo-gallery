@@ -1,0 +1,25 @@
+# Virtuelno okruženje
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# PyInstaller output
+dist/
+build/
+*.spec
+
+# Slike i galerija
+GalerijaProd/
+GalerijaTest/
+*.jpg
+*.jpeg
+*.png
+*.webp
+*.gif
+*.bmp
+
+# IDE fajlovi
+.vscode/
+.idea/

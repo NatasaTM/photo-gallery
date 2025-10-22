@@ -249,46 +249,76 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     }
 
     async function refreshGallery() {
-      try {
-        const response = await fetch(`/api/gallery?_=${Date.now()}`, { cache: "no-store" });
-        const fresh = await response.json();
-        const freshFolders = Object.keys(fresh).sort();
-        const oldFolders = Object.keys(galleryData).sort();
-        const foldersChanged = JSON.stringify(freshFolders) !== JSON.stringify(oldFolders);
+  try {
+    const response = await fetch(`/api/gallery?_=${Date.now()}`, { cache: "no-store" });
+    const fresh = await response.json();
+    const freshFolders = Object.keys(fresh).sort();
+    const oldFolders = Object.keys(galleryData).sort();
 
-        if (!freshFolders.includes(currentFolder)) {
-          const saved = localStorage.getItem(LAST_FOLDER_KEY);
-          currentFolder = (saved && freshFolders.includes(saved)) ? saved : freshFolders[0] || null;
-        }
-        if (!currentFolder) {
-          galleryData = fresh;
-          if (foldersChanged) renderFolderNav();
-          document.getElementById("gallery").innerHTML = '<div class="empty-state"><h2>Dodajte slike u foldere</h2></div>';
-          return;
-        }
+    const foldersChanged = JSON.stringify(freshFolders) !== JSON.stringify(oldFolders);
 
-        const prevList = galleryData[currentFolder] || [];
-        const freshList = fresh[currentFolder] || [];
-        freshList.sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'}));
-
-        const prevKeys = new Set(prevList.map(x=>`${x.name}:${x.mtime}`));
-        const newItems = freshList.filter(x=>!prevKeys.has(`${x.name}:${x.mtime}`));
-
-        if (foldersChanged) renderFolderNav();
-
-        const galleryEl = document.getElementById("gallery");
-        if (prevList.length === 0) {
-          galleryEl.innerHTML = "";
-          freshList.forEach((img,idx)=>galleryEl.appendChild(createCard(img,idx)));
-          currentImages = freshList.slice();
-        } else if (newItems.length > 0) {
-          const startIndex = prevList.length;
-          newItems.forEach((img,i)=>galleryEl.appendChild(createCard(img,startIndex+i)));
-          currentImages = prevList.concat(newItems);
-        }
-        galleryData = fresh;
-      } catch(e){ console.warn("Refresh greška:", e); }
+    // ✅ Ako nema foldera, ažuriraj i izađi
+    if (freshFolders.length === 0) {
+      galleryData = fresh;  // ✅ Ažuriraj prvo!
+      if (foldersChanged) {
+        document.getElementById("folderNav").innerHTML = 
+          '<div class="empty-state"><h2>Nema foldera sa slikama</h2></div>';
+      }
+      document.getElementById("gallery").innerHTML =
+        '<div class="empty-state"><h2>Dodajte slike u foldere</h2></div>';
+      currentFolder = null;
+      return;
     }
+
+    // ✅ KLJUČNA IZMENA: Ažuriraj galleryData ODMAH nakon što dobiješ fresh podatke
+    const prevList = galleryData[currentFolder] || [];
+    galleryData = fresh;  // ⭐ Pomeri OVDE, pre renderFolderNav()
+
+    // ✅ Ako currentFolder ne postoji (startup ili obrisan), postavi prvi dostupan
+    if (!currentFolder || !freshFolders.includes(currentFolder)) {
+      const saved = localStorage.getItem(LAST_FOLDER_KEY);
+      currentFolder = (saved && freshFolders.includes(saved)) ? saved : freshFolders[0];
+      localStorage.setItem(LAST_FOLDER_KEY, currentFolder);
+    }
+
+    // ✅ Osvežava navigaciju ako su se folderi promenili
+    if (foldersChanged) {
+      renderFolderNav();  // Sada koristi NOVI galleryData!
+    }
+
+    // Uporedi slike unutar aktivnog foldera
+    const freshList = galleryData[currentFolder] || [];
+    freshList.sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'}));
+
+    const prevKeys = new Set(prevList.map(x => `${x.name}:${x.mtime}`));
+    const newItems = freshList.filter(x => !prevKeys.has(`${x.name}:${x.mtime}`));
+
+    const galleryEl = document.getElementById("gallery");
+    
+    if (prevList.length === 0 && freshList.length > 0) {
+      // Prvi put: renderuj sve
+      galleryEl.innerHTML = "";
+      freshList.forEach((img, idx) => galleryEl.appendChild(createCard(img, idx)));
+      currentImages = freshList.slice();
+    } else if (newItems.length > 0) {
+      // Dodaj nove slike samo na kraj
+      const startIndex = prevList.length;
+      newItems.forEach((img, i) => {
+        const idx = startIndex + i;
+        galleryEl.appendChild(createCard(img, idx));
+      });
+      currentImages = prevList.concat(newItems);
+    } else if (freshList.length === 0) {
+      // Folder je ispražnjen
+      galleryEl.innerHTML = '<div class="empty-state"><h2>Nema slika u ovom folderu</h2></div>';
+      currentImages = [];
+    }
+
+  } catch (e) {
+    console.warn("Refresh greška:", e);
+  }
+}
+
 
     function connectStream() {
       try {

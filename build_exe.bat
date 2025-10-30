@@ -13,7 +13,7 @@ REM Instaliraj pyinstaller ako treba
 python -c "import PyInstaller" 2>nul || pip install pyinstaller
 
 echo [build] Pravim EXE...
-pyinstaller --onefile --name FotoGalerija ^
+pyinstaller --onefile --noconsole --name FotoGalerija ^
   --hidden-import=watchdog.observers.winapi ^
   --hidden-import=watchdog.observers.read_directory_changes ^
   run_prod.py

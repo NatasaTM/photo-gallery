@@ -48,11 +48,17 @@ echo ========================================
 echo.
 
 REM otvori SAMO lokalnu adresu na laptopu
-start "" "http://localhost:5000"
+REM (ovo sada radi automatski iz gallery_app.py)
+REM start "" "http://localhost:5000"
 
 REM opciono: kopiraj LAN URL u clipboard (radi na Win10/11)
 REM ako ne zelis copy u clipboard, obrisi sledecu liniju
 if defined IP powershell -NoProfile -Command "Set-Clipboard 'http://%IP%:5000'"
 
+echo.
+echo The app is running in the background until you run stop_fotke.bat.
+echo.
 pause
+exit
+
 endlocal

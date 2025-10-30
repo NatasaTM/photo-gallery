@@ -34,13 +34,26 @@ import os, sys
 GALLERY_FOLDER = os.environ.get("GALLERY_FOLDER")
 
 if not GALLERY_FOLDER:
+    import tkinter as tk
+    from tkinter import filedialog, messagebox
+    import webbrowser
+
     root = tk.Tk()
     root.withdraw()
-    GALLERY_FOLDER = filedialog.askdirectory(title="Izaberite folder sa slikama")
-    root.destroy()
+    while True:
+        folder = filedialog.askdirectory(title="Izaberite folder sa slikama")
+        if folder:
+            GALLERY_FOLDER = folder
+            break
+        else:
+            if not messagebox.askretrycancel(
+                "Odabir foldera", "Niste izabrali folder. Pokušajte ponovo?"
+            ):
+                import sys
 
-    if not GALLERY_FOLDER:
-        sys.exit(0)
+                sys.exit("Zatvoreno - nije izabran folder.")
+    root.destroy()
+    webbrowser.open("http://localhost:5000")
 
 os.makedirs(GALLERY_FOLDER, exist_ok=True)
 
@@ -389,7 +402,7 @@ def scan_gallery_folder():
 
 
 def rebuild_index_and_bump():
-    """Ponovo izgradi keš i podigni verziju; poziva se nakon FS promene."""
+    """Ponovo izgradi keš i podignu verziju; poziva se nakon FS promene."""
     global gallery_index, gallery_version
     with lock:
         gallery_index = scan_gallery_folder()

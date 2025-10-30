@@ -8,6 +8,8 @@ from flask import (
     stream_with_context,
 )
 import os
+import tkinter as tk
+from tkinter import filedialog
 from pathlib import Path
 import threading, queue, time
 
@@ -22,14 +24,32 @@ app = Flask(__name__)
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 
 # ==========================
-#  POSTAVKE – IZMENI PUTANJU
+#  POSTAVKE – FOLDER SA SLIKAMA
 # ==========================
-# ❗ OVDЕ POSTAVI STVARNI FOLDER SA SLIKAMA NA KLIJENTOVOM LAPTOPU
-GALLERY_FOLDER = r"C:\Users\Korisnik\Python\GalerijaProd"
+
+import tkinter as tk
+from tkinter import filedialog
+import os, sys
+
+GALLERY_FOLDER = os.environ.get("GALLERY_FOLDER")
+
+if not GALLERY_FOLDER:
+    root = tk.Tk()
+    root.withdraw()
+    GALLERY_FOLDER = filedialog.askdirectory(title="Izaberite folder sa slikama")
+    root.destroy()
+
+    if not GALLERY_FOLDER:
+        sys.exit(0)
+
+os.makedirs(GALLERY_FOLDER, exist_ok=True)
+
+
+# 🔹 Dozvoljene ekstenzije
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"}
 
-# Kreiraj folder ako ne postoji (sprečava rušenje pri startu)
-os.makedirs(GALLERY_FOLDER, exist_ok=True)
+print(f"📁 Aktivni folder za slike: {GALLERY_FOLDER}")
+
 
 # ==========================
 #   GLOBALNI KEŠ I SINHRONIZACIJA
